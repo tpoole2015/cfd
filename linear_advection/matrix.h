@@ -14,8 +14,9 @@ struct Matrix
   double *data(); 
   int dim() const; 
   void updateLUFactorization();
-  const double *getLUFactorization() const;
-  const int *getPivotIndicies() const;
+
+  // x <- A^{-1}x
+  void solveLinear(std::vector<double> *x) const;
 
 private:
   const int M_;

@@ -97,12 +97,8 @@ int main()
 
     const auto start = chrono::steady_clock::now();
 
-    const int NRHS = 1; 
-    const char TRANS = 'N';
     for (int n = 0; n < N; ++n) {
-        int INFO;
-        dgetrs_(&TRANS, &M, &NRHS, K.getLUFactorization(), &M, K.getPivotIndicies(), u.data(), &M, &INFO);
-        assert (INFO == 0);
+        K.solveLinear(&u);
     }
 
     const auto end = chrono::steady_clock::now();

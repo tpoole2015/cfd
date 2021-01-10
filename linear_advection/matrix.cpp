@@ -62,14 +62,16 @@ void Matrix::updateLUFactorization()
     assert(INFO >= 0);
 }
 
-const double* Matrix::getLUFactorization() const 
+void Matrix::solveLinear(vector<double> *x) const
 {
-    return plu_.data();
+    assert(static_cast<int>(x->size()) == M_);
+    const int NRHS = 1; 
+    const char TRANS = 'N';
+    int INFO;
+    dgetrs_(&TRANS, &M_, &NRHS, plu_.data(), &M_, pivots_.data(), x->data(), &M_, &INFO);
+    assert (INFO == 0);
 }
+ 
 
-const int* Matrix::getPivotIndicies() const 
-{
-    return pivots_.data();
-}
 
 
