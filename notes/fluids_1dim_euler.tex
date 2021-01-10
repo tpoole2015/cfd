@@ -1,0 +1,115 @@
+\documentclass[12pt]{article}    
+
+\usepackage{amsmath,amsfonts,amssymb}   %% AMS mathematics macros
+
+%% Title Information.
+
+\title{Derivation of the quasi 1-dim Euler equations}
+\author{Thomas Poole}
+
+%%%%% The Document
+
+\begin{document}
+
+\maketitle
+
+Our starting point is Reynold's transport theorem
+\begin{equation}
+\label{reynolds}
+	\frac{dN}{dt} = \frac{\partial}{\partial t}\int_{V}\eta\rho d\Omega + \int_{S}\eta\rho U\cdot dA
+\end{equation}
+where $N$ is an extensive property associated with the control volume $V$ and $\eta$ is the corresponding intensive property. That is
+$$
+ N(t) = \int_{V}\eta(x,t)\rho(x,t) d\Omega 
+$$
+We're considering 1-dim flow and so $U(x,t)=u(x,t)\hat{x}$. We take our system to be the fluid contained in the control volume $V$ at time $t = 0$. It's important to note that for $t > 0$ the control volume is most likely no longer our system! (our system has flowed in the $\hat{x}$ direction).
+
+\section{Conservation of mass}
+Setting $\eta = 1$ in \eqref{reynolds} gives us $N = $mass system. As the mass is not changing we get
+$$
+ 0 = \frac{dN}{dt} =  \frac{\partial}{\partial t}\int_{V}\rho d\Omega + \int_{S}\rho U\cdot dA.
+$$
+If we now take our control volume $V$ to be a cylinder from $x$ to $x + dx$ where each cross section has area $A(x)$ we get
+$$ 
+\frac{\partial}{\partial t}(\rho Adx)(x,t) + (\rho uA)(x+dx,t) - (\rho uA)(x,t) = 0 
+$$
+and so
+\begin{equation}
+\label{consmass}
+\boxed{\frac{\partial}{\partial t}(\rho A)(x,t) +  \frac{\partial}{\partial x}(\rho uA)(x,t) = 0}
+\end{equation}
+The equation \eqref{consmass} is the differential equation for the conservation of mass.
+
+\section{Conservation of momentum}
+Letting $N = $ momentum of our system (associated with the control volume at time $t=0$) in the $\hat{x}$ direction, then $\eta=\rho u$. Therefore
+$$
+ 0 = \frac{dN}{dt} = \frac{\partial}{\partial t}\int_{V}\rho ud\Omega + \int_{S}\rho uU\cdot dA.
+$$
+By Newton's second law we have
+\begin{align*}
+ \frac{dN}{dt} &= \sum_{F \text{acting on system}}F_x \\
+                        &= F^{\text{surface}}_x + F^{\text{body}}_x.
+\end{align*}
+Ignoring the body forces and just considering the surface forces (we're also neglecting shear forces, i.e. viscosity) gives us
+\begin{align*}
+ F^{\text{surface}}_x &= \text{pressure on left side of CV} + \text{pressure on right side of CV} + \text{pressure on area of CV connecting left and right sides} \\
+ &= (\rho A)(x,t) - (\rho A)(x+dx,t) + (p + \frac{dp}{2})dA(x,t)
+\end{align*}
+where we now have the fluid pressure $p = p(x,t)$ (force per unit area exerted by our fluid) appear in our equation. Combining the above gives us
+$$
+\frac{\partial}{\partial t}(\rho uAdx)(x,t) + (\rho u^2A)(x+dx,t) - (\rho u^2A)(x,t) = (pA)(x,t) - (pA)(x+dx,t) + (p+\frac{dp}{2})dA(x,t) 
+$$
+and therefore
+\begin{equation}
+\label{consmom}
+\boxed{\frac{\partial}{\partial t}(\rho uA) +  \frac{\partial}{\partial x}[(\rho u^2+p)A] = p\frac{dA}{dx}}
+\end{equation}
+which is the differential equation for the conservation of momentum.
+
+\section{Conservation of energy}
+Letting $N = E = $ energy of the system, then $\eta = \epsilon = $ energy per unit mass. So by \eqref{reynolds} we get
+\begin{equation}
+\label{coneng-reynolds}
+\frac{dE}{dt} = \frac{\partial}{\partial t}\int_{V}\rho \epsilon d\Omega + \int_{S}\rho \epsilon U\cdot dA
+                       = \frac{\partial}{\partial t}\int_{V}ed\Omega + \int_{S}eU\cdot dA
+\end{equation}
+where $e = \epsilon\rho$ is the energy per unit volume. From thermodynamics we have
+\begin{align*}
+\frac{dE}{dt} &= (\text{heat added to the system}) - (\text{rate at which work is done by the system}) \\
+                       &= \frac{dQ}{dt} - \frac{dW}{dt}
+\end{align*}
+we'll assume our system is adiabatic and so ignore $dQ/dt$. Consider a small unit of area of our control surface $dA$, then the work done by the system on $dA$ (displacing it by $dx$) is
+$$
+F\cdot dx = pdA\cdot dx
+$$
+and so the rate at which work is done by the system on $dA$ is
+$$
+pdA\cdot U
+$$
+therefore
+$$
+\frac{dW}{dt} = \int_SpU\cdot dA.
+$$
+If we plug this into ~\eqref{coneng-reynolds} we get
+$$
+\frac{\partial}{\partial t}\int_{V}ed\Omega + \int_{S}eU\cdot dA = -\int_S{pU\cdot dA}
+$$
+and so applying it to our cylindrical control volume gives us
+$$
+\frac{\partial}{\partial t}(eAdx)(x,t) + (euA)(x+dx,t) - (euA)(x,t) = -(puA)(x+dx,t) + (puA)(x,t)
+$$
+dividing by $dx$ and taking the limit gives us the PDE for conservation of energy
+\begin{equation}
+\boxed{
+\label{conseng}
+\frac{\partial}{\partial t}(eA) +  \frac{\partial}{\partial x}[(e+p)uA] = 0
+}
+\end{equation}
+
+\section{Discussion}
+We have derived 3 equations ~\eqref{consmass},~\eqref{consmom} and ~\eqref{conseng} in 4 unknowns $\rho,u,e$ and $p$. To close the system we use an equation of state. For example the ideal gas law gives us
+$$
+p=\rho(\gamma-1)e
+$$
+where $\gamma$ is the adiabatic index.
+\end{document}
