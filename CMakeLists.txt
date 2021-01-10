@@ -7,7 +7,7 @@ find_package(LAPACK)
 function(add_proj name)
     add_executable(${name} ${ARGN})
     target_compile_features(${name} PRIVATE cxx_std_11)
-    target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic -O3)
+    target_compile_options(${name} PRIVATE -g -Wall -Wextra -Wpedantic -O3)
     target_link_libraries(${name} ${LAPACK_LIBRARIES})
 endfunction()
 

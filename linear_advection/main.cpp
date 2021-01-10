@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <cassert>
 #include "matrix.h"
 #include "lapack_interface.h"
 
@@ -41,8 +42,8 @@ void writeData(const string &fn, const vector<double> &x, const vector<double> &
     }
 
     assert(x.size() == y.size());
-    for (int i = 0; i < x.size(); ++i)
-        cout << x[i] << "\t" << y[i] << "\n";
+    for (int i = 0; i < static_cast<int>(x.size()); ++i)
+        fs << x[i] << "\t" << y[i] << "\n";
 }
 
 int main()
@@ -74,34 +75,38 @@ int main()
     cout << "Enter kMax (maximum harmonic used in building our initial condition)\n";
     int kMax;
     cin >> kMax;
-
+  
+    const double alpha=-0.5*M*a;
     const vector<double> c{-alpha*(1+beta), 2*alpha*beta, alpha*(1-beta)};
-    const Matrix<allocator> A(M, c);
+    const Matrix A(M, c);
 
-    Matrix<allocator> K(1);   // K = I - h*A
+    Matrix K(M);   // K = I - h*A
     for (int i = 0; i < A.dim(); ++i)
-        for (int j = 0; j < A.dim(); ++j)
+        for (int j = 0; j < A.dim(); ++j) {
+            if (i == j) K(i, j) = 1;
             K(i,j) -= h*A(i,j);
+        }
  
+    K.updateLUFactorization();
+
     // generate our initial condition u_0(x)
     const vector<double> gridPoints = generateGridPoints(M);
     vector<double> u;
     for (double p : gridPoints)
       u.push_back(initialCondition(p, kMax));
 
-    K.updateLUFactorization();
+    const auto start = chrono::steady_clock::now();
 
     const int NRHS = 1; 
     const char TRANS = 'N';
     for (int n = 0; n < N; ++n) {
         int INFO;
-        dgetrs_(&TRANS, &M, &NRHS, K.getLUFactorization(), &M, K.getPivotIndices(), u.data(), &M, &INFO);
+        dgetrs_(&TRANS, &M, &NRHS, K.getLUFactorization(), &M, K.getPivotIndicies(), u.data(), &M, &INFO);
         assert (INFO == 0);
     }
 
-    auto end = chrono::steady_clock::now();
-    chrono::duration<double> diff = end - start;
-    cout << "took " << 1000*diff.count() << "ms\n";
+    const auto end = chrono::steady_clock::now();
+    cout << "took " << 1000*chrono::duration<double>(end - start).count() << "ms\n";
 
     cout << "Enter output file\n";
     string outFile;
