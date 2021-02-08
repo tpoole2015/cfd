@@ -77,23 +77,24 @@ int main()
     cin >> kMax;
   
     const double alpha=-0.5*M*a;
-    const vector<double> c{-alpha*(1+beta), 2*alpha*beta, alpha*(1-beta)};
-    const Matrix A(M, c);
+    const Matrix A(M, {-alpha*(1+beta), 2*alpha*beta, alpha*(1-beta)});
 
     Matrix K(M);   // K = I - h*A
-    for (int i = 0; i < A.dim(); ++i)
+    for (int i = 0; i < A.dim(); ++i) {
         for (int j = 0; j < A.dim(); ++j) {
             if (i == j) K(i, j) = 1;
             K(i,j) -= h*A(i,j);
         }
+    }
  
     K.updateLUFactorization();
 
     // generate our initial condition u_0(x)
     const vector<double> gridPoints = generateGridPoints(M);
     vector<double> u;
-    for (double p : gridPoints)
+    for (double p : gridPoints) {
       u.push_back(initialCondition(p, kMax));
+    }
 
     const auto start = chrono::steady_clock::now();
 

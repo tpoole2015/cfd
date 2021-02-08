@@ -13,3 +13,5 @@ endfunction()
 
 # add targets
 add_proj(la linear_advection/main.cpp linear_advection/matrix.cpp)
+add_proj(onedim_exact onedim_exact/main.cpp)
+add_proj(onedim_numeric onedim_numeric/main.cpp)
