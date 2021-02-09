@@ -18,6 +18,10 @@ vector<pair<int, double>> finiteDifferenceCoeffs(int i, int M, const vector<doub
 }
 }
 
+int Matrix::NumScalarMultiplications = 0;
+int Matrix::NumMatrixMultiplications = 0;
+int Matrix::NumMatrixAdditions = 0;
+
 Matrix::Matrix(int M) : 
     M_(M), 
     data_(M_*M_, 0),
@@ -48,7 +52,12 @@ double* Matrix::data()
 {
     return data_.data();
 }
- 
+
+const double* Matrix::data() const
+{
+    return data_.data();
+}
+
 int Matrix::dim() const 
 {
     return M_;
@@ -86,6 +95,8 @@ Matrix& Matrix::operator+=(const Matrix &rhs)
     const int incx = 1;
     const int incy = 1;
     daxpy_(&n, &alpha, rhs.data(), &incx, this->data(), &incy);
+
+    Matrix::NumMatrixAdditions += 1;
     return *this;
 }
 
@@ -98,7 +109,7 @@ Matrix& Matrix::operator*=(double a)
 }
 
 // A*=B => A<-A*B
-Matrix& Matrix::operator*=(const Matrix &rhs);
+Matrix& Matrix::operator*=(const Matrix &rhs)
 {
     // unorthodox but forced on us by the structure of the BLAS routines
     const Matrix result = (*this) * rhs;
@@ -113,22 +124,29 @@ Matrix operator+(Matrix lhs, const Matrix &rhs)
 
 Matrix operator*(double a, const Matrix &rhs)
 {
-    Matrix out(M_);
-    const int n = M_*M_;
+    const int M = rhs.dim();
+    Matrix out(M);
+    const int n = M*M;
     const int incx = 1;
     const int incy = 1;
     daxpy_(&n, &a, rhs.data(), &incx, out.data(), &incy);
+
+    Matrix::NumScalarMultiplications += 1;
     return out;
 }
 
 Matrix operator*(const Matrix &lhs, const Matrix &rhs)
 {
-    Matrix out(M_);
+    assert(lhs.dim()==rhs.dim());
+    const int M = lhs.dim();
+    Matrix out(M);
     const char transa = 'n';
     const char transb = 'n';
-    const int alpha = 1;
-    const int beta = 0;
-    dgemm_(&transa, &transb, &M_, &M_, &M_, &alpha, lhs.data(), &M_, rhs.data(), &M_, &beta, out.data(), &M_);
+    const double alpha = 1;
+    const double beta = 0;
+    dgemm_(&transa, &transb, &M, &M, &M, &alpha, lhs.data(), &M, rhs.data(), &M, &beta, out.data(), &M);
+
+    Matrix::NumMatrixMultiplications += 1;
     return out;
 }
 

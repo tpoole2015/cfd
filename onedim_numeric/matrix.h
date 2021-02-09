@@ -12,6 +12,7 @@ struct Matrix
   double& operator()(int i, int j);
   double operator()(int i, int j) const;
   double *data(); 
+  const double *data() const;
   int dim() const; 
   void updateLUFactorization();
 
@@ -23,6 +24,11 @@ struct Matrix
   Matrix &operator*=(const Matrix &rhs);
 
   static Matrix identity(int M);
+
+  // keep track of how much work we're doing
+  static int NumScalarMultiplications;
+  static int NumMatrixMultiplications;
+  static int NumMatrixAdditions;
 private:
   const int M_;
   std::vector<double> data_;
@@ -33,8 +39,9 @@ private:
 };
 
 Matrix operator+(Matrix lhs, const Matrix &rhs);
-Matrix operator*(double a, Matrix rhs);
-Matrix operator*(Matrx lhs, const Matrix &rhs);
+Matrix operator*(double a, const Matrix &rhs);
+Matrix operator*(const Matrix &lhs, const Matrix &rhs);
+
 
 
 
