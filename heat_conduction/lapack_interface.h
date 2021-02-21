@@ -46,6 +46,15 @@ void dgemm_(const char *TRANSA,
             const double *BETA,
             double *C,
             const int *LDC);
+
+void dgtsv_(const int *N,
+            const int *NRHS,
+            double *DL,
+            double *D,
+            double *DU,
+            double *B,
+            int *LDB,
+            int *INFO);
 }
 
 
