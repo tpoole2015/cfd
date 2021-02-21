@@ -53,7 +53,7 @@ void dgtsv_(const int *N,
             double *D,
             double *DU,
             double *B,
-            int *LDB,
+            const int *LDB,
             int *INFO);
 }
 

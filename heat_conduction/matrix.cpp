@@ -11,7 +11,7 @@ int Matrix::NumMatrixAdditions = 0;
 Matrix::Matrix(int numRows, int numColumns) : 
     NumRows(numRows), 
     NumColumns(numColumns), 
-    data_(numRows*numColumns, 0),
+    data_(numRows*numColumns, 0)
 {
 }
  
@@ -35,108 +35,22 @@ const double* Matrix::Data() const
     return data_.data();
 }
 
-Matrix Matrix::Identity(int M)
+void Matrix::SolveLinear(std::vector<double> *b) const
 {
-    Matrix m(M, M);
-    for (int i = 0; i < M; ++i)
-    {
-        m[i,i] = 1;
-    }
-    return m;
+    (void)(b);
+    assert(false);
 }
 
-//////////////// GeneralMatrix //////////////// 
-GeneralMatrix::GeneralMatrix(int numRows, int numCols) :
-    Matrix(numRows, numCols)
-{
-}
-
-void GeneralMatrix::UpdateLUFactorization() 
-{
-    int info;
-    pivotIndicies_.reserve(min(numRows, numCols));
-    plu_ = data_; // dgetrf forces us to make a copy
-    dgetrf_(&NumRows, &NumColumns, plu_.data(), &NumRows, pivotIndicies_.data(), &info);
-    assert(info >= 0);
-}
-
-void GeneralMatrix::SolveLinear(vector<double> *b) const
-{
-    assert(NumRows == NumColumns);
-    assert(static_cast<int>(b->size()) == NumRows);
-
-    const int nrhs = 1; 
-    const char trans = 'n';
-    int info;
-    dgetrs_(&trans, &NumRows, &nrhs, plu_.data(), &NumRows, pivots_.data(), b->data(), &NumRows, &info);
-    assert(info == 0);
-}
-
-//////////////// BandedMatrix //////////////// 
-TridiagonalMatrix::TridiagonalMatrix(int order) :
-    Matrix(order, 3), // col 0 = diagonal, col 1 = sub diagonal, col 2 = super diagonal
-    Order(order)
-{
-}
-
-const double* TridiagonalMatrix::GetDiagonal() const
-{
-    return static_cast<const double*>(this->GetDiagonal());
-}
-
-double* TridiagonalMatrix::GetDiagonal()
-{
-    return this->Data();
-}
-
-const double* TridiagonalMatrix::GetSubDiagonal() const
-{
-    return static_cast<const double*>(this->GetSubDiagonal());
-}
-
-double* TridiagonalMatrix::GetSubDiagonal()
-{
-    return this->Data() + Order;
-}
-
-const double* TridiagonalMatrix::GetSuperDiagonal() const
-{
-    return static_cast<const double*>(this->GetSuperDiagonal());
-}
-
-double* TridiagonalMatrix::GetSuperDiagonal()
-{
-    return this->Data() + 2*Order;
-}
-
-void TridiagonalMatrix::SolveLinear(vector<double> *b) const
-{
-    assert(b->size() == Order);
-
-    TridiagonalMatrix copy(*this);
-    const int nrhs = 1; 
-    const char trans = 'n';
-    int info;
-    dgtsv_(&Order, &nrhs, 
-           copy.GetSubDiagonal(), 
-           copy.GetDiagonal(), 
-           copy.GetSuperDiagonal(), 
-           x->data(), &Order, &info); 
-    assert(info == 0);
-}
-
-
-//////////////// friends //////////////// 
 Matrix& Matrix::operator+=(const Matrix &rhs)
 {
-    assert (NumRows == rhs.NumRows());
-    assert (NumColumns == rhs.NumColumnss());
+    assert (NumRows == rhs.NumRows);
+    assert (NumColumns == rhs.NumColumns);
 
-    const int n = NumRows*NumColumnss;
+    const int n = NumRows*NumColumns;
     const double alpha = 1;
     const int incx = 1;
     const int incy = 1;
-    daxpy_(&n, &alpha, rhs.data(), &incx, this->data(), &incy);
+    daxpy_(&n, &alpha, rhs.Data(), &incx, this->Data(), &incy);
 
     Matrix::NumMatrixAdditions += 1;
     return *this;
@@ -150,6 +64,98 @@ Matrix& Matrix::operator*=(double a)
     return *this;
 }
 
+//////////////// GeneralMatrix //////////////// 
+GeneralMatrix::GeneralMatrix(int numRows, int numColumns) :
+    Matrix(numRows, numColumns)
+{
+}
+
+GeneralMatrix GeneralMatrix::Identity(int M)
+{
+    GeneralMatrix m(M, M);
+    for (int i = 0; i < M; ++i)
+    {
+        m(i,i) = 1;
+    }
+    return m;
+}
+
+void GeneralMatrix::UpdateLUFactorization() 
+{
+    int info;
+    pivotIndicies_.reserve(min(NumRows, NumColumns));
+    plu_ = data_; // dgetrf forces us to make a copy
+    dgetrf_(&NumRows, &NumColumns, plu_.data(), &NumRows, pivotIndicies_.data(), &info);
+    assert(info >= 0);
+}
+
+void GeneralMatrix::SolveLinear(vector<double> *b) const
+{
+    assert(NumRows == NumColumns);
+    assert(static_cast<int>(b->size()) == NumRows);
+
+    const int nrhs = 1; 
+    const char trans = 'n';
+    int info;
+    dgetrs_(&trans, &NumRows, &nrhs, plu_.data(), &NumRows, pivotIndicies_.data(), b->data(), &NumRows, &info);
+    assert(info == 0);
+}
+
+//////////////// BandedMatrix //////////////// 
+TridiagonalMatrix::TridiagonalMatrix(int order) :
+    Matrix(order, 3), // col 0 = diagonal, col 1 = sub diagonal, col 2 = super diagonal
+    Order(order)
+{
+}
+
+const double* TridiagonalMatrix::GetDiagonal() const
+{
+    return this->Data();
+}
+
+double* TridiagonalMatrix::GetDiagonal()
+{
+    return this->Data();
+}
+
+const double* TridiagonalMatrix::GetSubDiagonal() const
+{
+    return this->Data() + Order;
+}
+
+double* TridiagonalMatrix::GetSubDiagonal()
+{
+    return this->Data() + Order;
+}
+
+const double* TridiagonalMatrix::GetSuperDiagonal() const
+{
+    return this->Data() + 2*Order;
+}
+
+double* TridiagonalMatrix::GetSuperDiagonal()
+{
+    return this->Data() + 2*Order;
+}
+
+void TridiagonalMatrix::SolveLinear(vector<double> *b) const
+{
+    assert(static_cast<int>(b->size()) == Order);
+
+    TridiagonalMatrix copy(*this);
+    const int nrhs = 1; 
+    const char trans = 'n';
+    int info;
+    dgtsv_(&Order, &nrhs, 
+           copy.GetSubDiagonal(), 
+           copy.GetDiagonal(), 
+           copy.GetSuperDiagonal(), 
+           b->data(), &Order, &info); 
+    assert(info == 0);
+}
+
+
+//////////////// friends //////////////// 
 Matrix operator+(Matrix lhs, const Matrix &rhs)
 {
     return lhs += rhs;
@@ -161,7 +167,7 @@ Matrix operator*(double a, const Matrix &rhs)
     const int n = rhs.NumRows * rhs.NumColumns;
     const int incx = 1;
     const int incy = 1;
-    daxpy_(&n, &a, rhs.data(), &incx, out.data(), &incy);
+    daxpy_(&n, &a, rhs.Data(), &incx, out.Data(), &incy);
 
     Matrix::NumScalarMultiplications += 1;
     return out;

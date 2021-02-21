@@ -12,19 +12,17 @@ struct Matrix
   const double *Data() const;
 
   // x <- A^{-1}b
-  virtual void SolveLinear(std::vector<double> *b) const = 0;
+  virtual void SolveLinear(std::vector<double> *b) const;
 
   Matrix &operator+=(const Matrix &rhs);
   Matrix &operator*=(double a);
-
-  static Matrix Identity(int M);
 
   // keep track of how much work we're doing
   static int NumScalarMultiplications;
   static int NumMatrixMultiplications;
   static int NumMatrixAdditions;
 
-  const int NumRows, NumColumnss;
+  const int NumRows, NumColumns;
 
 protected:
   std::vector<double> data_;
@@ -33,7 +31,9 @@ protected:
 
 struct GeneralMatrix : public Matrix
 {
-    GeneralMatrix(int numRows, int numCols);
+    GeneralMatrix(int numRows, int numColumns);
+
+    static GeneralMatrix Identity(int M);
 
     void UpdateLUFactorization();
     void SolveLinear(std::vector<double> *x) const;
@@ -60,7 +60,7 @@ struct TridiagonalMatrix : public Matrix
     const int Order;
 };
 
-Matrix operator+(Matrix lhs, const Matrix &rhs);
+Matrix operator+(Matrix& lhs, const Matrix &rhs);
 Matrix operator*(double a, const Matrix &rhs);
 
 

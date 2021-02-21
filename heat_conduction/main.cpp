@@ -1,31 +1,32 @@
 // Chaidxer 4 of Numerical Heat Transfer and Fluid Flow by Patankar
 #include <vector>
 #include <algorithm>
+#include <cassert>
 #include "matrix.h"
 
+struct Solution;
 struct Grid
 {
     struct Index
     {
-        // TODO: understand brace initilization
-        int XIndex{0};
-        int YIndex{0};
+        int XIndex;
+        int YIndex;
     };
 
     struct Point
     {
-        double X{0.0};
-        double Y{0.0};
-    }
+        double X;
+        double Y;
+    };
 
     struct Coefficients
     {
-        double Center{0.0};
-        double Left{0.0};
-        double Right{0.0};
-        double Up{0.0};
-        double Down{0.0};
-        double Constant{0.0};
+        double Center;
+        double Left;
+        double Right;
+        double Up;
+        double Down;
+        double Constant;
     };
 
     Grid(const std::vector<double> &xValues, const std::vector<double> &yValues);
@@ -64,8 +65,8 @@ struct Grid
     const int NumYValues;
 
 private:
-    vector<double> xValues_;
-    vector<double> yValues_;
+    std::vector<double> xValues_;
+    std::vector<double> yValues_;
 };
 
 Grid::Grid(const std::vector<double> &xValues, const std::vector<double> &yValues) :
@@ -75,16 +76,16 @@ Grid::Grid(const std::vector<double> &xValues, const std::vector<double> &yValue
     yValues_(yValues)
 {
     assert(xValues.size() && yValues.size());
-    std::sort(xValues.begin(), xValues.end());  // sort left to right
-    std::sort(yValues.begin(), yValues.end());  // sort bottom to top 
+    std::sort(xValues_.begin(), xValues_.end());  // sort left to right
+    std::sort(yValues_.begin(), yValues_.end());  // sort bottom to top 
 }
 
 Grid::Point Grid::IndexToPoint(const Index &i) const
 {
-    return {xValues_[i.XIndex], yValues_[i.YIndex];
+    return {xValues_[i.XIndex], yValues_[i.YIndex]};
 }
 
-Coefficients GetDiscretizationCoeffs(const Index &idx, const Solution &soln)
+Grid::Coefficients Grid::GetDiscretizationCoeffs(const Index &idx, const Solution &soln) const
 {
     (void) idx;
     (void) soln;
@@ -92,46 +93,48 @@ Coefficients GetDiscretizationCoeffs(const Index &idx, const Solution &soln)
     return c;
 }
 
-Index GetBottomLeft()
+Grid::Index Grid::GetBottomLeft() const
 {
     return {0, NumYValues - 1};
 }
 
-bool HasLeft(const Index &idx)
+bool Grid::HasLeft(const Index &idx) const
 {
     return idx.XIndex > 0;
 }
 
-bool HasRight(const Index &idx)
+bool Grid::HasRight(const Index &idx) const
 {
     return idx.XIndex < NumXValues - 1;
 }
 
-bool HasUp(const Index &idx)
+bool Grid::HasUp(const Index &idx) const
 {
     return idx.YIndex > 0;
 }
 
-bool HasDown(const Index &idx);
+bool Grid::HasDown(const Index &idx) const
 {
     return idx.YIndex < NumYValues - 1;
 }
 
-Index MoveLeft(const Index &idx)
+Grid::Index Grid::MoveLeft(const Index &idx) const
 {
     return {idx.XIndex-1, idx.YIndex};
 }
 
-Index MoveRight(const Index &idx)
+Grid::Index Grid::MoveRight(const Index &idx) const
+{
     return {idx.XIndex+1, idx.YIndex};
 }
 
-Index MoveUp(const Index &idx)
+Grid::Index Grid::MoveUp(const Index &idx) const
 {
     return {idx.XIndex, idx.YIndex-1};
 }
 
-Index MoveDown(const Index &idx)
+Grid::Index Grid::MoveDown(const Index &idx) const
+{
     return {idx.XIndex, idx.YIndex+1};
 }
 
@@ -139,7 +142,7 @@ struct Solution
 {
     Solution(const Grid &grid);
 
-    const Grid &GetGridReference();
+    const Grid &GetGridReference() const;
 
     double operator()(const Grid::Index &idx) const;
     double& operator()(const Grid::Index &idx);
@@ -149,29 +152,29 @@ private:
 };
 
 Solution::Solution(const Grid &grid)
-    : grid_(grid), values_[grid.NumXValues*grid.NumYValues]
+    : grid_(grid), values_(grid.NumXValues*grid.NumYValues)
 {}
 
-const Grid &GetGridReference()
+const Grid &Solution::GetGridReference() const
 {
     return grid_;
 }
 
-double operator()(const Grid::Index &idx) const
+double Solution::operator()(const Grid::Index &idx) const
 {
-    return (*this)(idx);
+    return values_[idx.YIndex*grid_.NumXValues + idx.XIndex];
 }
 
-double& operator()(const Grid::Index &idx)
+double& Solution::operator()(const Grid::Index &idx)
 {
     return values_[idx.YIndex*grid_.NumXValues + idx.XIndex];
 }
 
 std::pair<Matrix, std::vector<double>> BuildTriDiagonalEquations(Grid::Index idx, const Solution &soln) 
 {
-    TridiagonalMatrix m(grid.NumYIndexs);
-    std::vector<double> rhs(m.Order);
     const Grid &grid = soln.GetGridReference();
+    TridiagonalMatrix m(grid.NumYValues);
+    std::vector<double> rhs(m.Order);
 
     int i = 0;
     for ( ; grid.HasUp(idx); idx = grid.MoveUp(idx))
@@ -192,7 +195,7 @@ std::pair<Matrix, std::vector<double>> BuildTriDiagonalEquations(Grid::Index idx
         {
             c += eqnCoefs.Left*soln(grid.MoveLeft(idx));
         }
-        if (g.HasRight(idx))
+        if (grid.HasRight(idx))
         {
             c += eqnCoefs.Right*soln(grid.MoveRight(idx));
         }
@@ -201,7 +204,7 @@ std::pair<Matrix, std::vector<double>> BuildTriDiagonalEquations(Grid::Index idx
         ++i;
     }
 
-    return {m, c}; // Is m copied here? (need to check)
+    return {m, rhs}; // Is m copied here? (need to check)
 }
 
 int main(int argc, char *argv[])
@@ -214,7 +217,7 @@ int main(int argc, char *argv[])
     {
         for (auto leftRightIdx = grid.GetBottomLeft(); grid.HasRight(leftRightIdx); leftRightIdx = grid.MoveRight(leftRightIdx))
         {
-            const auto triDiag = BuildTriDiagonalMatrix(leftRightIdx, soln);
+            auto triDiag = BuildTriDiagonalEquations(leftRightIdx, soln);
             triDiag.first.SolveLinear(&triDiag.second);
             
             // update soln
