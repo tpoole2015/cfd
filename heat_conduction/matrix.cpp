@@ -146,11 +146,14 @@ void TridiagonalMatrix::SolveLinear(vector<double> *b) const
     const int nrhs = 1; 
     const char trans = 'n';
     int info;
-    dgtsv_(&Order, &nrhs, 
+    dgtsv_(&Order, 
+           &nrhs, 
            copy.GetSubDiagonal(), 
            copy.GetDiagonal(), 
            copy.GetSuperDiagonal(), 
-           b->data(), &Order, &info); 
+           b->data(), 
+           &Order, 
+           &info); 
     assert(info == 0);
 }
 
