@@ -2,7 +2,7 @@
 #include "grid.h"
 #include "solution.h"
 
-Grid::Grid(std::vector<double> controlVolXValues, std::vector<double> controlVolYValues)
+Grid::Grid(const std::vector<double> &controlVolXValues, const std::vector<double> &controlVolYValues) :
     controlVolXValues_(controlVolXValues),
     controlVolYValues_(controlVolYValues)
 {
@@ -10,17 +10,17 @@ Grid::Grid(std::vector<double> controlVolXValues, std::vector<double> controlVol
     assert(controlVolXValues.size() > 1);
     xValues_.reserve(controlVolXValues.size() - 1);
     std::sort(controlVolXValues_.begin(), controlVolXValues_.end());  // sort left to right
-    for (int i = 0; i < controlVolXValues.size() - 1; ++i)
+    for (int i = 0; i < static_cast<int>(controlVolXValues.size()) - 1; ++i)
     {
-        xValues_[i] = .5*(controlVolXValues[i] + controlVolXValues[i+1];
+        xValues_[i] = .5*(controlVolXValues[i] + controlVolXValues[i+1]);
     }
 
     assert(controlVolYValues.size() > 1);
     yValues_.reserve(controlVolYValues.size() - 1);
     std::sort(controlVolYValues_.begin(), controlVolYValues_.end());  // sort bottom to top 
-    for (int i = 0; i < controlVolYValues.size() - 1; ++i)
+    for (int i = 0; i < static_cast<int>(controlVolYValues.size()) - 1; ++i)
     {
-        yValues_[i] = .5*(controlVolYValues[i] + controlVolYValues[i+1];
+        yValues_[i] = .5*(controlVolYValues[i] + controlVolYValues[i+1]);
     }
 }
 

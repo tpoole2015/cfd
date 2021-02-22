@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
+#include "grid.h"
 
-struct Grid;
 struct Solution
 {
     Solution(const Grid &grid);

@@ -26,7 +26,7 @@ struct Grid
         double Constant;
     };
 
-    Grid(std::vector<double> controlVolXValues, std::vector<double> controlVolYValues);
+    Grid(const std::vector<double> &controlVolXValues, const std::vector<double> &controlVolYValues);
     /*
      If this is what our control volumes look like, 
 
@@ -64,8 +64,8 @@ struct Grid
     int NumYValues() const;
 
 private:
-    const std::vector<double> controlVolXValues_;
-    const std::vector<double> controlVolYValues_;
+    std::vector<double> controlVolXValues_;
+    std::vector<double> controlVolYValues_;
     std::vector<double> xValues_;
     std::vector<double> yValues_;
 };

@@ -144,7 +144,6 @@ void TridiagonalMatrix::SolveLinear(vector<double> *b) const
 
     TridiagonalMatrix copy(*this);
     const int nrhs = 1; 
-    const char trans = 'n';
     int info;
     dgtsv_(&Order, 
            &nrhs, 
