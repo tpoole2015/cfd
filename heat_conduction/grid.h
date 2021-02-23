@@ -8,6 +8,52 @@ struct Grid
     {
         int XIndex;
         int YIndex;
+        const Grid &GridReference;
+
+        int ToArrayIndex() const
+        {
+            return YIndex*GridReference.NumXValues() + XIndex;
+        }
+
+        bool HasLeft() const
+        {
+            return XIndex > 0;
+        }
+
+        bool HasRight() const
+        {
+            return XIndex < GridReference.NumXValues() - 1;
+        }
+
+        bool HasUp() const
+        {
+            return YIndex < GridReference.NumYValues() - 1;
+        }
+
+        bool HasDown() const
+        {
+            return YIndex > 0;
+        }
+
+        void MoveLeft()
+        {
+            --XIndex;
+        }
+
+        void MoveRight()
+        {
+            ++XIndex;
+        }
+
+        void MoveDown()
+        {
+            --YIndex;
+        }
+
+        void MoveUp()
+        {
+            ++YIndex;
+        }
     };
 
     struct Point
@@ -59,16 +105,6 @@ struct Grid
     Coefficients GetDiscretizationCoeffs(double alpha, double dt, const Index &idx, const Solution &soln) const;
 
     Index GetOrigin() const;
-
-    bool HasLeft(const Index &idx) const;
-    bool HasRight(const Index &idx) const;
-    bool HasUp(const Index &idx) const;
-    bool HasDown(const Index &idx) const;
-
-    Index MoveLeft(const Index &idx) const;
-    Index MoveRight(const Index &idx) const;
-    Index MoveUp(const Index &idx) const;
-    Index MoveDown(const Index &idx) const;
 
     int NumXValues() const;
     int NumYValues() const;

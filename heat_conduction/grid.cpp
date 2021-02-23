@@ -34,32 +34,34 @@ Grid::Grid(std::vector<double> controlVolXValues,
     assert(kHorizontal[0].size() == controlVolXValues.size() - 1);
     assert(sources.size() == yValues_.size());
     assert(sources[0].size() == xValues_.size());
-    for (int i = 0; i < static_cast<int>(yValues_.size()); ++i) // bottom to top
+    Index idx{0, 0, *this};
+    for ( ; idx.YIndex < static_cast<int>(yValues_.size()); ++idx.YIndex) // bottom to top
     {
-        const std::vector<double> &kUp = kHorizontal[i]; 
-        const std::vector<double> &kLeftRight = kVertical[i]; 
-        const std::vector<double> &kDown = kHorizontal[i+1]; 
+        const std::vector<double> &kUp = kHorizontal[idx.YIndex]; 
+        const std::vector<double> &kLeftRight = kVertical[idx.YIndex]; 
+        const std::vector<double> &kDown = kHorizontal[idx.YIndex+1]; 
 
-        const double deltaY_d = yValues_[i] - controlVolYValues[i];
-        const double deltaY_u = controlVolYValues[i+1] - yValues_[i];
+        const double deltaY_d = yValues_[idx.YIndex] - controlVolYValues[idx.YIndex];
+        const double deltaY_u = controlVolYValues[idx.YIndex+1] - yValues_[idx.YIndex];
         const double deltaY = deltaY_d + deltaY_u;
-        for (int j = 0; j < static_cast<int>(xValues_.size()); ++j) // left to right
+        for ( ; idx.XIndex < static_cast<int>(xValues_.size()); ++idx.XIndex) // left to right
         {
-            const double ku = kUp[j];
-            const double kd = kDown[j];
-            const double kl = kLeftRight[j];
-            const double kr = kLeftRight[j+1];
+            const double ku = kUp[idx.XIndex];
+            const double kd = kDown[idx.XIndex];
+            const double kl = kLeftRight[idx.XIndex];
+            const double kr = kLeftRight[idx.XIndex+1];
 
-            const double deltaX_l = xValues_[j] - controlVolXValues[j];
-            const double deltaX_r = controlVolXValues[j+1] - xValues_[j];
+            const double deltaX_l = xValues_[idx.XIndex] - controlVolXValues[idx.XIndex];
+            const double deltaX_r = controlVolXValues[idx.XIndex+1] - xValues_[idx.XIndex];
             const double deltaX = deltaX_l + deltaX_r;
 
-            leftCoeffs_[i*xValues_.size() + j] = kl*deltaY / deltaX_l;
-            rightCoeffs_[i*xValues_.size() + j] = kr*deltaY / deltaX_r;
-            upCoeffs_[i*xValues_.size() + j] = ku*deltaX / deltaY_u;
-            downCoeffs_[i*xValues_.size() + j] = kd*deltaX / deltaY_d;
-            deltaXdeltaY_[i*xValues_.size() + j] = deltaX * deltaY;
-            sources_[i*xValues_.size() + j] = sources[i][j];
+            const auto arrIdx = idx.ToArrayIndex();
+            leftCoeffs_[arrIdx] = kl*deltaY / deltaX_l;
+            rightCoeffs_[arrIdx] = kr*deltaY / deltaX_r;
+            upCoeffs_[arrIdx] = ku*deltaX / deltaY_u;
+            downCoeffs_[arrIdx] = kd*deltaX / deltaY_d;
+            deltaXdeltaY_[arrIdx] = deltaX * deltaY;
+            sources_[arrIdx] = sources[idx.YIndex][idx.XIndex];
         }
     }
 }
@@ -85,47 +87,7 @@ Grid::Coefficients Grid::GetDiscretizationCoeffs(double alpha, double dt, const 
 
 Grid::Index Grid::GetOrigin() const
 {
-    return {0, 0};
-}
-
-bool Grid::HasLeft(const Index &idx) const
-{
-    return idx.XIndex > 0;
-}
-
-bool Grid::HasRight(const Index &idx) const
-{
-    return idx.XIndex < NumXValues() - 1;
-}
-
-bool Grid::HasUp(const Index &idx) const
-{
-    return idx.YIndex < NumYValues() - 1;
-}
-
-bool Grid::HasDown(const Index &idx) const
-{
-    return idx.YIndex > 0;
-}
-
-Grid::Index Grid::MoveLeft(const Index &idx) const
-{
-    return {idx.XIndex-1, idx.YIndex};
-}
-
-Grid::Index Grid::MoveRight(const Index &idx) const
-{
-    return {idx.XIndex+1, idx.YIndex};
-}
-
-Grid::Index Grid::MoveDown(const Index &idx) const
-{
-    return {idx.XIndex, idx.YIndex-1};
-}
-
-Grid::Index Grid::MoveUp(const Index &idx) const
-{
-    return {idx.XIndex, idx.YIndex+1};
+    return {0, 0, *this};
 }
 
 int Grid::NumXValues() const
