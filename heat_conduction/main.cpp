@@ -12,7 +12,7 @@
 std::pair<Matrix, std::vector<double>> BuildTriDiagonalEquations(Grid::Index idx, const Solution &prev, const Solution &next, double alpha, double dt) 
 {
     const Grid &grid = idx.GridReference;
-    TridiagonalMatrix m(grid.NumYValues());
+    TridiagonalMatrix m(grid.NumYValues);
     std::vector<double> rhs(m.Order);
 
     int i = 0;
@@ -57,17 +57,12 @@ int main(int argc, char *argv[])
     const double alpha = 1;
     const double dt = 0.1;
     const double t = 5;
-    Grid grid({0, 2, 4, 5}, 
-              {0, 1, 8, 9},
-              {{k,k,k,k},{k,k,k,k}},
-              {{k,k,k},{k,k,k},{k,k,k}},
-              {{S,S,S},{S,S,S}});
-    const int numTimeSteps = 10;
 
-    Solution next(grid), prev(grid);
-    // TODO: PopulateInitialConditions(prev);
-    // TODO: boundary conditions
-    next = prev;
+    InputVariables input;
+    Grid grid(input);
+
+    Solution next(grid);
+    Solution prev(grid);
     for (int i = 0; i < static_cast<int>(t / dt); ++i)
     {
         int numIterations = 0;
@@ -89,7 +84,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            const double err = sumResiduals / (grid.NumXValues()*grid.NumYValues());
+            const double err = sumResiduals / (grid.NumXValues*grid.NumYValues);
             if (err < TOLERANCE)
             {
                 break;
