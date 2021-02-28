@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 #include "grid.h"
 #include "solution.h"
 
@@ -71,16 +72,7 @@ Grid::Grid(InputVariables input) :
     // we only do this once so it doesn't have to be fast
     
     assert(static_cast<int>(input.Volumes.size()) == input.NumXVols*input.NumYVols);
-    auto cmp = [](const InputVariables::ControlVolume &lhs, const InputVariables::ControlVolume &rhs) -> bool {
-        // sort bottom to top then left to right
-        if (lhs.TopLeft.Y == rhs.TopLeft.Y)
-        {
-            return lhs.TopLeft.X < rhs.TopLeft.X;
-        } 
-        return lhs.TopLeft.Y < rhs.TopLeft.Y;
-    };
-    std::sort(input.Volumes.begin(), input.Volumes.end(), cmp);
-
+   
     double xValue = 0;
     double yValue = 0;
     double leftCoeff = 0;
@@ -90,10 +82,10 @@ Grid::Grid(InputVariables input) :
     double constantCoeff = 0;
     double deltaXdeltaY = 0;
 
-    Index idx{0, 0, *this};
-    for ( ; idx.YIndex < input.NumYVols; ++idx.YIndex)
+    Index idx{0, 0, this};
+    for (idx.YIndex = 0 ; idx.YIndex < input.NumYVols; ++idx.YIndex)
     {
-        for ( ; idx.XIndex < input.NumXVols; ++idx.XIndex)
+        for (idx.XIndex = 0 ; idx.XIndex < input.NumXVols; ++idx.XIndex)
         {
             const auto arrIdx = idx.ToArrayIndex();
             const InputVariables::ControlVolume &vol = input.Volumes[arrIdx];
@@ -123,7 +115,8 @@ Grid::Grid(InputVariables input) :
 
 Point Grid::IndexToPoint(const Index &i) const
 {
-    return {xValues_[i.XIndex], yValues_[i.YIndex]};
+    const auto arrIdx = i.ToArrayIndex();
+    return {xValues_[arrIdx], yValues_[arrIdx]};
 }
 
 Grid::Coefficients Grid::GetDiscretizationCoeffs(double alpha, double dt, const Index &idx, const Solution &soln) const
@@ -154,9 +147,24 @@ Grid::Coefficients Grid::GetDiscretizationCoeffs(double alpha, double dt, const 
     return c;
 }
 
-Grid::Index Grid::GetOrigin() const
+Grid::Index Grid::GetTopLeft() const
 {
-    return {0, 0, *this};
+    return {0, NumYValues-1, this};
+}
+
+Grid::Index Grid::GetBottomLeft() const
+{
+    return {0, 0, this};
+}
+
+Grid::Index Grid::GetTopRight() const
+{
+    return {NumXValues-1, NumYValues-1, this};
+}
+
+Grid::Index Grid::GetBottomRight() const
+{
+    return {NumXValues-1, 0, this};
 }
 
 const std::vector<double> &Grid::GetInitialValues() const

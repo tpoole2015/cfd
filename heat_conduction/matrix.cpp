@@ -1,4 +1,6 @@
 #include <cassert>
+#include <stdexcept>
+#include <iostream>
 #include "matrix.h"
 #include "lapack_interface.h"
 
@@ -35,10 +37,24 @@ const double* Matrix::Data() const
     return data_.data();
 }
 
-void Matrix::SolveLinear(std::vector<double> *b) const
+void Matrix::SolveLinear(std::vector<double> *) const
 {
-    (void)(b);
-    assert(false);
+    throw std::runtime_error("Matrix::SolveLinear not implemented");
+}
+
+void Matrix::Print() const
+{
+    for (int r = 0; r < NumRows; ++r)
+    {
+        std::cout << "[";
+        for (int c = 0; c < NumColumns; ++c)
+        {
+            std::cout << (*this)(r,c);
+            if (c < NumColumns - 1)
+                std::cout << ",";
+        }
+        std::cout << "]\n";
+    }
 }
 
 Matrix& Matrix::operator+=(const Matrix &rhs)

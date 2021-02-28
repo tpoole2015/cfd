@@ -17,6 +17,8 @@ struct Matrix
   Matrix &operator+=(const Matrix &rhs);
   Matrix &operator*=(double a);
 
+  void Print() const;
+
   // keep track of how much work we're doing
   static int NumScalarMultiplications;
   static int NumMatrixMultiplications;

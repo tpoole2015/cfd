@@ -21,8 +21,7 @@ struct InputVariables
         double SourceValue;
         std::array<double, 4> K; // 0 = Left face, 1 = Right face, 2 = Up face, 3 = Down face
 
-        // Only used when VolumePosition != Center
-        BoundaryValueType BVType;
+        BoundaryValueType BVType; // Only used for boundary volumes
 
         // If type is Scalar: BoundaryValues = { value at grid point }
         // If type is Flux:
@@ -39,7 +38,7 @@ struct InputVariables
     };
     int NumXVols; 
     int NumYVols;
-    std::vector<ControlVolume> Volumes;
+    std::vector<ControlVolume> Volumes; // [Y*NumXVols + X]
 };
 
 struct Solution;
@@ -49,31 +48,16 @@ struct Grid
     {
         int XIndex;
         int YIndex;
-        const Grid &GridReference;
+        const Grid *GridPtr;
 
         int ToArrayIndex() const
         {
-            return YIndex*GridReference.NumXValues + XIndex;
+            return YIndex*GridPtr->NumXValues + XIndex;
         }
 
-        bool HasLeft() const
+        bool InGrid() const
         {
-            return XIndex > 0;
-        }
-
-        bool HasRight() const
-        {
-            return XIndex < GridReference.NumXValues - 1;
-        }
-
-        bool HasUp() const
-        {
-            return YIndex < GridReference.NumYValues - 1;
-        }
-
-        bool HasDown() const
-        {
-            return YIndex > 0;
+            return XIndex >= 0 && XIndex < GridPtr->NumXValues && YIndex >= 0 && YIndex < GridPtr->NumYValues;
         }
 
         void MoveLeft()
@@ -113,7 +97,10 @@ struct Grid
 
     Coefficients GetDiscretizationCoeffs(double alpha, double dt, const Index &idx, const Solution &soln) const;
 
-    Index GetOrigin() const;
+    Index GetTopLeft() const;
+    Index GetBottomLeft() const;
+    Index GetTopRight() const;
+    Index GetBottomRight() const;
 
     const std::vector<double> &GetInitialValues() const;
 
