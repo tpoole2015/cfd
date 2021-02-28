@@ -1,29 +1,29 @@
 // Chaidxer 4 of Numerical Heat Transfer and Fluid Flow by Patankar
 #include <vector>
 #include <algorithm>
-#include <cassert>
+#include <stdexcept>
 #include <iostream>
-#include <sstream>
 #include <cmath>
+#include <chrono>
 #include "matrix.h"
 #include "grid.h"
 #include "solution.h"
 
-#define TOLERANCE      10e-5
+#define TOLERANCE      10e-6
 #define MAX_ITERATIONS 100
 
-std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquations(Grid::Index idx, const Solution &prev, const Solution &next, double alpha, double dt) 
+std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsLeftRight(Grid::Index idx, const Solution &prev, const Solution &next, double alpha, double dt) 
 {
     const Grid &grid = *(idx.GridPtr);
-    TridiagonalMatrix m(grid.NumYValues);
-    std::vector<double> rhs(m.Order);
+    std::pair<TridiagonalMatrix, std::vector<double>> returnPair = 
+        std::make_pair(TridiagonalMatrix(grid.NumYValues), std::vector<double>(grid.NumYValues, 0));
 
+    auto &m = returnPair.first;
+    auto &rhs = returnPair.second;
     int i = 0;
     for ( ; idx.InGrid(); idx.MoveUp())
     {
         const Grid::Coefficients eqnCoefs = grid.GetDiscretizationCoeffs(alpha, dt, idx, prev);
-        const double sum = std::fabs(eqnCoefs.Up) + std::fabs(eqnCoefs.Down) + std::fabs(eqnCoefs.Left) + std::fabs(eqnCoefs.Right);
-        assert(sum < std::fabs(eqnCoefs.Center)); // numerical requirement
 
         m.GetDiagonal()[i] = eqnCoefs.Center;
         if (i > 0)
@@ -52,7 +52,50 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquations(Grid
         ++i;
     }
 
-    return {m, rhs}; // Is m copied here? (need to check)
+    return returnPair;
+}
+
+std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsDownUp(Grid::Index idx, const Solution &prev, const Solution &next, double alpha, double dt) 
+{
+    const Grid &grid = *(idx.GridPtr);
+    std::pair<TridiagonalMatrix, std::vector<double>> returnPair = 
+        std::make_pair(TridiagonalMatrix(grid.NumXValues), std::vector<double>(grid.NumXValues, 0));
+
+    auto &m = returnPair.first;
+    auto &rhs = returnPair.second;
+    int i = 0;
+    for ( ; idx.InGrid(); idx.MoveRight())
+    {
+        const Grid::Coefficients eqnCoefs = grid.GetDiscretizationCoeffs(alpha, dt, idx, prev);
+
+        m.GetDiagonal()[i] = eqnCoefs.Center;
+        if (i > 0)
+        {
+            m.GetSubDiagonal()[i-1] = -1*eqnCoefs.Left; // -1 is IMPORTANT, we've moved the coefficient to the LHS!
+        }
+        if (i < m.Order)
+        {
+            m.GetSuperDiagonal()[i] = -1*eqnCoefs.Right;
+        }
+        double c = eqnCoefs.Constant;
+        auto copyIdx = idx;
+        copyIdx.MoveDown();
+        if (copyIdx.InGrid())
+        {
+            c += eqnCoefs.Down*next(copyIdx);
+        }
+        copyIdx = idx;
+        copyIdx.MoveUp();
+        if (copyIdx.InGrid())
+        {
+            c += eqnCoefs.Up*next(copyIdx);
+        }
+        rhs[i] = c;
+
+        ++i;
+    }
+
+    return returnPair;
 }
 
 InputVariables BuildInputVariables()
@@ -157,7 +200,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    const std::string fn(argv[1]);
+    const std::string fileName(argv[1]);
     const double alpha = 1;
     const double dt = 0.1;
     const double t = 10;
@@ -169,27 +212,50 @@ int main(int argc, char *argv[])
  
     int totalNumIterations = 0; 
     const int numSteps = static_cast<int>(t/dt); 
+    const auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < numSteps; ++i)
     {
+        // Gauss-Seidel (alternate solving left/right and down/up)
         int numIterations = 0;
+        bool workLeftRight = true;
         while (numIterations++ < MAX_ITERATIONS)
         {
             double sumResiduals = 0;
-            for (auto leftRightIdx = grid.GetBottomLeft(); leftRightIdx.InGrid(); leftRightIdx.MoveRight())
+            if (workLeftRight)
             {
-                auto triDiag = BuildTriDiagonalEquations(leftRightIdx, prev, next, alpha, dt);
-                triDiag.first.SolveLinear(&triDiag.second);
-               
-                // update soln
-                int i = 0;
-                for (auto downUpIdx = leftRightIdx; downUpIdx.InGrid(); downUpIdx.MoveUp())
+                for (auto leftRightIdx = grid.GetBottomLeft(); leftRightIdx.InGrid(); leftRightIdx.MoveRight())
                 {
-                    const double newValue = triDiag.second[i++];
-                    sumResiduals += (newValue - next(downUpIdx))*(newValue - next(downUpIdx));
-                    next(downUpIdx) = newValue;
+                    auto triDiag = BuildTriDiagonalEquationsLeftRight(leftRightIdx, prev, next, alpha, dt);
+                    triDiag.first.SolveLinear(&triDiag.second);
+                   
+                    // update soln
+                    int i = 0;
+                    for (auto downUpIdx = leftRightIdx; downUpIdx.InGrid(); downUpIdx.MoveUp())
+                    {
+                        const double newValue = triDiag.second[i++];
+                        sumResiduals += (newValue - next(downUpIdx))*(newValue - next(downUpIdx));
+                        next(downUpIdx) = newValue;
+                    }
+                }
+            } 
+            else 
+            {
+                for (auto downUpIdx = grid.GetBottomLeft(); downUpIdx.InGrid(); downUpIdx.MoveUp())
+                {
+                    auto triDiag = BuildTriDiagonalEquationsDownUp(downUpIdx, prev, next, alpha, dt);
+                    triDiag.first.SolveLinear(&triDiag.second);
+                   
+                    // update soln
+                    int i = 0;
+                    for (auto leftRightIdx = downUpIdx; leftRightIdx.InGrid(); leftRightIdx.MoveRight())
+                    {
+                        const double newValue = triDiag.second[i++];
+                        sumResiduals += (newValue - next(leftRightIdx))*(newValue - next(leftRightIdx));
+                        next(leftRightIdx) = newValue;
+                    }
                 }
             }
-
+            workLeftRight = !workLeftRight;
             const double err = sumResiduals / static_cast<double>(grid.NumXValues*grid.NumYValues);
             if (err < TOLERANCE)
             {
@@ -198,11 +264,11 @@ int main(int argc, char *argv[])
         }
         totalNumIterations += numIterations;
         prev = next;
-
-        std::stringstream fileName;
-        fileName << fn << "_" << i;
-        next.WriteHeatMapToFile(fileName.str());
     }    
+    const auto end = std::chrono::steady_clock::now();
+    std::cout << "took " << 1000*std::chrono::duration<double>(end - start).count() << "ms\n";
+
+    next.WriteHeatMapToFile(fileName);
     std::cout << "Avg num iterations for convergence: " << totalNumIterations/numSteps << "\n";
 }
 

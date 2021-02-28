@@ -1,4 +1,3 @@
-#include <cassert>
 #include <stdexcept>
 #include <iostream>
 #include "matrix.h"
@@ -59,8 +58,14 @@ void Matrix::Print() const
 
 Matrix& Matrix::operator+=(const Matrix &rhs)
 {
-    assert (NumRows == rhs.NumRows);
-    assert (NumColumns == rhs.NumColumns);
+    if (NumRows != rhs.NumRows)
+    {
+        throw std::runtime_error("Matrix::operator+= mismatch in lhs.NumRows != rhs.NumRows");
+    }
+    if (NumColumns != rhs.NumColumns)
+    {
+        throw std::runtime_error("Matrix::operator+= mismatch in lhs.NumColumns != rhs.NumColumns");
+    }
 
     const int n = NumRows*NumColumns;
     const double alpha = 1;
@@ -102,19 +107,31 @@ void GeneralMatrix::UpdateLUFactorization()
     pivotIndicies_.reserve(min(NumRows, NumColumns));
     plu_ = data_; // dgetrf forces us to make a copy
     dgetrf_(&NumRows, &NumColumns, plu_.data(), &NumRows, pivotIndicies_.data(), &info);
-    assert(info >= 0);
+    if (info < 0)
+    {
+        throw std::runtime_error("GeneralMatrix::UpdateLUFactorization dgetrf_ returned negative INFO");
+    }
 }
 
 void GeneralMatrix::SolveLinear(vector<double> *b) const
 {
-    assert(NumRows == NumColumns);
-    assert(static_cast<int>(b->size()) == NumRows);
+    if (NumRows != NumColumns)
+    {
+        throw std::runtime_error("GeneralMatrix::SolveLinear NumRows != NumColumns");
+    }
+    if (static_cast<int>(b->size()) != NumRows)
+    {
+        throw std::runtime_error("GeneralMatrix::SolveLinear length of b != NumRows");
+    }
 
     const int nrhs = 1; 
     const char trans = 'n';
     int info;
     dgetrs_(&trans, &NumRows, &nrhs, plu_.data(), &NumRows, pivotIndicies_.data(), b->data(), &NumRows, &info);
-    assert(info == 0);
+    if (info)
+    {
+        throw std::runtime_error("GeneralMatrix::SolveLinear dgetrs_ returned non-zero INFO");
+    }
 }
 
 //////////////// BandedMatrix //////////////// 
@@ -156,7 +173,10 @@ double* TridiagonalMatrix::GetSuperDiagonal()
 
 void TridiagonalMatrix::SolveLinear(vector<double> *b) const
 {
-    assert(static_cast<int>(b->size()) == Order);
+    if (static_cast<int>(b->size()) != NumRows)
+    {
+        throw std::runtime_error("TridiagonalMatrix::SolveLinear length of b != NumRows");
+    }
 
     TridiagonalMatrix copy(*this);
     const int nrhs = 1; 
@@ -169,7 +189,10 @@ void TridiagonalMatrix::SolveLinear(vector<double> *b) const
            b->data(), 
            &Order, 
            &info); 
-    assert(info == 0);
+    if (info)
+    {
+        throw std::runtime_error("TridiagonalMatrix::SolveLinear dgtsv_ returned non-zero INFO");
+    }
 }
 
 
