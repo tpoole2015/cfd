@@ -5,10 +5,12 @@
 
 struct Solution
 {
-    Solution(const Grid &grid);
+    Solution(const Grid *gridPtr);
 
-    double operator()(const Grid::Index &idx) const;
-    double& operator()(const Grid::Index &idx);
+    void Init(const std::vector<double> &values);
+
+    double operator()(const Grid::Point &pt) const;
+    double& operator()(const Grid::Point &pt);
 
     void WriteHeatMapToFile(const std::string &file) const;
 private:

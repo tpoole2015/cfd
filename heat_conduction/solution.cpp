@@ -3,18 +3,23 @@
 #include "solution.h"
 #include "grid.h"
 
-Solution::Solution(const Grid &grid)
-    : gridPtr_(&grid), values_(grid.GetInitialValues())
+Solution::Solution(const Grid *gridPtr)
+    : gridPtr_(gridPtr)
 {}
 
-double Solution::operator()(const Grid::Index &idx) const
+void Solution::Init(const std::vector<double> &values)
 {
-    return values_[idx.ToArrayIndex()];
+    values_ = values;
 }
 
-double& Solution::operator()(const Grid::Index &idx)
+double Solution::operator()(const Grid::Point &pt) const
 {
-    return values_[idx.ToArrayIndex()];
+    return values_[pt.ToArrayIndex()];
+}
+
+double& Solution::operator()(const Grid::Point &pt)
+{
+    return values_[pt.ToArrayIndex()];
 }
 
 void Solution::WriteHeatMapToFile(const std::string &file) const
@@ -31,10 +36,9 @@ void Solution::WriteHeatMapToFile(const std::string &file) const
     {
         for (auto leftRight = topBottom; leftRight.InGrid(); leftRight.MoveRight())
         {
-            const Point pt = gridPtr_->IndexToPoint(leftRight);
-
+            const auto pt = leftRight.GetCoordinates();
             const double val = this->operator()(leftRight);
-            ofs << pt.X << " " << pt.Y << " " << val << "\n";
+            ofs << pt.first << " " << pt.second << " " << val << "\n";
         }
         ofs << "\n";
     }
