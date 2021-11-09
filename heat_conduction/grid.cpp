@@ -9,21 +9,21 @@ Grid::Grid(int xDim, int yDim)
 
 Grid::Point Grid::GetTopLeft() const
 {
-    return {0, YDim-1, this};
+    return Grid::Point(0, YDim-1, this);
 }
 
 Grid::Point Grid::GetBottomLeft() const
 {
-    return {0, 0, this};
+    return Grid::Point(0, 0, this);
 }
 
 Grid::Point Grid::GetTopRight() const
 {
-    return {XDim-1, YDim-1, this};
+    return Grid::Point(XDim-1, YDim-1, this);
 }
 
 Grid::Point Grid::GetBottomRight() const
 {
-    return {XDim-1, 0, this};
+    return Grid::Point(XDim-1, 0, this);
 }
 

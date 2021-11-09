@@ -13,7 +13,7 @@ namespace
 template <class T>
 std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsLeftRight(Grid::Point pt, const Solution &soln, const T &coeff) 
 {
-    const Grid &grid = *(pt.GridPtr);
+    const Grid &grid = pt.GetGrid();
     std::pair<TridiagonalMatrix, std::vector<double>> returnPair = std::make_pair(TridiagonalMatrix(grid.YDim), std::vector<double>(grid.YDim, 0));
 
     auto &m = returnPair.first;
@@ -52,7 +52,7 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsLeftR
 template <class T>
 std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsDownUp(Grid::Point pt, const Solution &soln, const T &coeff) 
 {
-    const Grid &grid = *(pt.GridPtr);
+    const Grid &grid = pt.GetGrid();
     std::pair<TridiagonalMatrix, std::vector<double>> returnPair = std::make_pair(TridiagonalMatrix(grid.XDim), std::vector<double>(grid.XDim, 0));
 
     auto &m = returnPair.first;

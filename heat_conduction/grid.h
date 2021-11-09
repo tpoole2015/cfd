@@ -22,46 +22,54 @@ struct Grid
 {
     struct Point 
     {
-        int I;
-        int J;
+        Point(int row, int col, const Grid *ptr) : Row(row), Col(col), gridPtr_(ptr) {};
 
-        const Grid *GridPtr;
+        const Grid &GetGrid() 
+        {
+            return *gridPtr_;
+        }
 
         int64_t ToArrayIndex() const
         {
-            return J*GridPtr->XDim + I;
+            return Row*gridPtr_->XDim + Col;
         }
 
         bool InGrid() const
         {
-            return I >= 0 && I < GridPtr->XDim && J >= 0 && J < GridPtr->YDim;
+            return Col >= 0 && Col < gridPtr_->XDim && Row >= 0 && Row < gridPtr_->YDim;
         }
 
         void MoveLeft()
         {
-            --I;
+            --Col;
         }
 
         void MoveRight()
         {
-            ++I;
+            ++Col;
         }
 
         void MoveDown()
         {
-            --J;
+            --Row;
         }
 
         void MoveUp()
         {
-            ++J;
+            ++Row;
         }
 
         std::pair<double, double> GetCoordinates() const
         {
             const auto arrIdx = this->ToArrayIndex();
-            return {GridPtr->xValues_[arrIdx], GridPtr->yValues_[arrIdx]};
+            return {gridPtr_->xValues_[arrIdx], gridPtr_->yValues_[arrIdx]};
         }
+
+        int Row;
+        int Col;
+
+    private:
+        const Grid *gridPtr_;
     };
 
     Grid(const int xDim, const int yDim);
@@ -77,7 +85,4 @@ struct Grid
     std::vector<double> xValues_;
     std::vector<double> yValues_;
 };
-
-
-
 
