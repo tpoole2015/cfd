@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 #include "heat_equation.h"
 #include "solver.h"
 
@@ -44,7 +45,7 @@ void ConstructBoundary(const InputVariables::ControlVolume &vol,
     midPointYValue = 0.5*(vol.BottomRight.Y + vol.TopLeft.Y);
 
     const double deltaX = vol.BottomRight.X - vol.TopLeft.X;
-    const double deltaY = vol.BottomRight.Y - vol.TopLeft.Y;
+    const double deltaY = vol.TopLeft.Y - vol.BottomRight.Y;
 
     constantCoeff = vol.BoundaryValue;
     deltaXdeltaY = deltaX * deltaY;
@@ -78,32 +79,31 @@ HeatEquation::HeatEquation(const InputVariables &input, double alpha, double dt)
     double constantCoeff = 0;
     double deltaXdeltaY = 0;
 
-    Grid::Point pt{0, 0, &grid_};
-    for (pt.Row = 0 ; pt.Row < input.NumYVols; ++pt.Row)
+    for (auto topBottom = grid_.GetTopLeft(); topBottom.InGrid(); topBottom.MoveDown())
     {
-        for (pt.Col = 0 ; pt.Col < input.NumXVols; ++pt.Col)
+        for (auto pt = topBottom; pt.InGrid(); pt.MoveRight())
         {
-            const auto arrColdx = pt.ToArrayIndex();
-            const InputVariables::ControlVolume &vol = input.Volumes[arrColdx];
-            if (pt.Col > 0 && pt.Col < grid_.XDim - 1 && pt.Row > 0 && pt.Row < grid_.YDim - 1)
-            {
-                ConstructCenter(vol, midPointXValue, midPointYValue, leftCoeff, rightCoeff, upCoeff, downCoeff, deltaXdeltaY);
-            }
-            else
+            const auto arrIdx = pt.ToArrayIndex();
+            const InputVariables::ControlVolume &vol = input.Volumes[arrIdx];
+            if (pt.IsBoundary())
             {
                 ConstructBoundary(vol, midPointXValue, midPointYValue, constantCoeff, deltaXdeltaY);
             }
+            else
+            {
+                ConstructCenter(vol, midPointXValue, midPointYValue, leftCoeff, rightCoeff, upCoeff, downCoeff, deltaXdeltaY);
+            }
 
-            grid_.xValues_[arrColdx] = midPointXValue;
-            grid_.yValues_[arrColdx] = midPointYValue;
-            leftCoeffs_[arrColdx] = leftCoeff;
-            rightCoeffs_[arrColdx] = rightCoeff;
-            upCoeffs_[arrColdx] = upCoeff;
-            downCoeffs_[arrColdx] = downCoeff;
-            constantCoeffs_[arrColdx] = constantCoeff;
-            deltaXdeltaY_[arrColdx] = deltaXdeltaY;
-            sources_[arrColdx] = vol.SourceValue;
-            initialValues_[arrColdx] = vol.InitialValue;
+            grid_.xValues_[arrIdx] = midPointXValue;
+            grid_.yValues_[arrIdx] = midPointYValue;
+            leftCoeffs_[arrIdx] = leftCoeff;
+            rightCoeffs_[arrIdx] = rightCoeff;
+            upCoeffs_[arrIdx] = upCoeff;
+            downCoeffs_[arrIdx] = downCoeff;
+            constantCoeffs_[arrIdx] = constantCoeff;
+            deltaXdeltaY_[arrIdx] = deltaXdeltaY;
+            sources_[arrIdx] = vol.SourceValue;
+            initialValues_[arrIdx] = vol.InitialValue;
         }
     }
 
@@ -116,16 +116,7 @@ Coefficients HeatEquation::operator()(const Grid::Point& pt) const
     const auto n = pt.ToArrayIndex();
     const double a = alpha_*deltaXdeltaY_[n]/dt_;
     Coefficients c;
-    if (pt.Col > 0 && pt.Col < grid_.XDim - 1 && pt.Row > 0 && pt.Row < grid_.YDim - 1)
-    {
-        c.Left = leftCoeffs_[n];
-        c.Right = rightCoeffs_[n];
-        c.Up = upCoeffs_[n];
-        c.Down = downCoeffs_[n];
-        c.Constant = a*prev_(pt) + sources_[n]*deltaXdeltaY_[n];
-        c.Center = c.Left + c.Right + c.Up + c.Down + a; 
-    }
-    else
+    if (pt.IsBoundary())
     {
         // boundary value
         c.Left = 0;
@@ -135,6 +126,16 @@ Coefficients HeatEquation::operator()(const Grid::Point& pt) const
         c.Center = 1;
         c.Constant = constantCoeffs_[n]; // ignoring boundary sources
     }
+    else
+    {
+        c.Left = leftCoeffs_[n];
+        c.Right = rightCoeffs_[n];
+        c.Up = upCoeffs_[n];
+        c.Down = downCoeffs_[n];
+        c.Constant = a*prev_(pt) + sources_[n]*deltaXdeltaY_[n];
+        c.Center = c.Left + c.Right + c.Up + c.Down + a; 
+    }
+
     return c;
 }
 

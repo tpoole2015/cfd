@@ -5,8 +5,8 @@
 #include "solution.h"
 #include "matrix.h"
 
-#define TOLERANCE      10e-6
-#define MAX_ITERATIONS 100
+#define TOLERANCE      10e-4
+#define MAX_ITERATIONS 10
 
 namespace
 {
