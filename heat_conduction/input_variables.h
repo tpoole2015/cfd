@@ -7,8 +7,8 @@ struct InputVariables
 {
     struct ControlVolume
     {
-        Point TopLeft;
-        Point BottomRight;
+        Point2d TopLeft;
+        Point2d BottomRight;
         double InitialValue;
         double BoundaryValue;
         double SourceValue;

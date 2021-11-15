@@ -19,7 +19,7 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsLeftR
     auto &m = returnPair.first;
     auto &rhs = returnPair.second;
     int i = 0;
-    for ( ; pt.InGrid(); pt.MoveUp())
+    for ( ; pt.InGrid(); ++pt.Y)
     {
         const Coefficients eqnCoefs = coeff(pt);
         m.GetDiagonal()[i] = eqnCoefs.Center;
@@ -33,13 +33,13 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsLeftR
         }
         rhs[i] = eqnCoefs.Constant;
         auto copyPt = pt;
-        copyPt.MoveLeft();
+        --copyPt.X;
         if (copyPt.InGrid())
         {
             rhs[i] += eqnCoefs.Left*soln(copyPt);
         }
         copyPt = pt;
-        copyPt.MoveRight();
+        ++copyPt.X;
         if (copyPt.InGrid())
         {
             rhs[i] += eqnCoefs.Right*soln(copyPt);
@@ -58,7 +58,7 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsDownU
     auto &m = returnPair.first;
     auto &rhs = returnPair.second;
     int i = 0;
-    for ( ; pt.InGrid(); pt.MoveRight())
+    for ( ; pt.InGrid(); ++pt.X)
     {
         const Coefficients eqnCoefs = coeff(pt);
         m.GetDiagonal()[i] = eqnCoefs.Center;
@@ -72,13 +72,13 @@ std::pair<TridiagonalMatrix, std::vector<double>> BuildTriDiagonalEquationsDownU
         }
         double c = eqnCoefs.Constant;
         auto copyPt = pt;
-        copyPt.MoveDown();
+        --copyPt.Y;
         if (copyPt.InGrid())
         {
             c += eqnCoefs.Down*soln(copyPt);
         }
         copyPt = pt;
-        copyPt.MoveUp();
+        ++copyPt.Y;
         if (copyPt.InGrid())
         {
             c += eqnCoefs.Up*soln(copyPt);
@@ -104,14 +104,14 @@ namespace Solver
             double sumResiduals = 0;
             if (workLeftRight)
             {
-                for (auto leftRightPt = grid.GetBottomLeft(); leftRightPt.InGrid(); leftRightPt.MoveRight())
+                for (auto leftRightPt = grid.GetBottomLeft(); leftRightPt.InGrid(); ++leftRightPt.X)
                 {
                     auto triDiag = BuildTriDiagonalEquationsLeftRight(leftRightPt, soln, coeffs);
                     triDiag.first.SolveLinear(&triDiag.second);
                    
                     // update soln
                     int i = 0;
-                    for (auto downUpPt = leftRightPt; downUpPt.InGrid(); downUpPt.MoveUp())
+                    for (auto downUpPt = leftRightPt; downUpPt.InGrid(); ++downUpPt.Y)
                     {
                         const double newValue = triDiag.second[i++];
                         sumResiduals += (newValue - soln(downUpPt))*(newValue - soln(downUpPt));
@@ -121,14 +121,14 @@ namespace Solver
             } 
             else 
             {
-                for (auto downUpPt = grid.GetBottomLeft(); downUpPt.InGrid(); downUpPt.MoveUp())
+                for (auto downUpPt = grid.GetBottomLeft(); downUpPt.InGrid(); ++downUpPt.Y)
                 {
                     auto triDiag = BuildTriDiagonalEquationsDownUp(downUpPt, soln, coeffs);
                     triDiag.first.SolveLinear(&triDiag.second);
                    
                     // update soln
                     int i = 0;
-                    for (auto leftRightPt = downUpPt; leftRightPt.InGrid(); leftRightPt.MoveRight())
+                    for (auto leftRightPt = downUpPt; leftRightPt.InGrid(); ++leftRightPt.X)
                     {
                         const double newValue = triDiag.second[i++];
                         sumResiduals += (newValue - soln(leftRightPt))*(newValue - soln(leftRightPt));

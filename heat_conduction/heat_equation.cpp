@@ -79,9 +79,9 @@ HeatEquation::HeatEquation(const InputVariables &input, double alpha, double dt)
     double constantCoeff = 0;
     double deltaXdeltaY = 0;
 
-    for (auto topBottom = grid_.GetTopLeft(); topBottom.InGrid(); topBottom.MoveDown())
+    for (auto topBottom = grid_.GetTopLeft(); topBottom.InGrid(); --topBottom.Y)
     {
-        for (auto pt = topBottom; pt.InGrid(); pt.MoveRight())
+        for (auto pt = topBottom; pt.InGrid(); ++pt.X)
         {
             const auto arrIdx = pt.ToArrayIndex();
             const InputVariables::ControlVolume &vol = input.Volumes[arrIdx];

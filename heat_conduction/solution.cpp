@@ -32,9 +32,9 @@ void Solution::WriteHeatMapToFile(const std::string &file) const
         throw std::runtime_error(errMsg.str());
     }
 
-    for (auto topBottom = gridPtr_->GetTopLeft(); topBottom.InGrid(); topBottom.MoveDown())
+    for (auto topBottom = gridPtr_->GetTopLeft(); topBottom.InGrid(); --topBottom.Y)
     {
-        for (auto leftRight = topBottom; leftRight.InGrid(); leftRight.MoveRight())
+        for (auto leftRight = topBottom; leftRight.InGrid(); ++leftRight.X)
         {
             const auto pt = leftRight.GetCoordinates();
             const double val = this->operator()(leftRight);

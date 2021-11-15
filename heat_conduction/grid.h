@@ -2,7 +2,7 @@
 #include <vector>
 #include <array>
 
-struct Point
+struct Point2d
 {
     double X;
     double Y;
@@ -22,7 +22,7 @@ struct Grid
 {
     struct Point 
     {
-        Point(int x, int y, const Grid *ptr) : x_(x), y_(y), gridPtr_(ptr) {};
+        Point(int x, int y, const Grid *ptr) : X(x), Y(y), gridPtr_(ptr) {};
 
         const Grid &GetGrid() 
         {
@@ -31,37 +31,17 @@ struct Grid
 
         int64_t ToArrayIndex() const
         {
-            return y_*gridPtr_->XDim + x_;
+            return Y*gridPtr_->XDim + X;
         }
 
         bool InGrid() const
         {
-            return x_ >= 0 && x_ < gridPtr_->XDim && y_ >= 0 && y_ < gridPtr_->YDim;
+            return X >= 0 && X<gridPtr_->XDim && Y>=0 && Y<gridPtr_->YDim;
         }
 
         bool IsBoundary() const
         {
-            return x_==0||x_==(gridPtr_->XDim-1)||y_==0||y_==(gridPtr_->YDim-1);
-        }
-
-        void MoveLeft()
-        {
-            --x_;
-        }
-
-        void MoveRight()
-        {
-            ++x_;
-        }
-
-        void MoveDown()
-        {
-            --y_;
-        }
-
-        void MoveUp()
-        {
-            ++y_;
+            return X==0||X==(gridPtr_->XDim-1)||Y==0||Y==(gridPtr_->YDim-1);
         }
 
         std::pair<double, double> GetCoordinates() const
@@ -70,12 +50,10 @@ struct Grid
             return {gridPtr_->xValues_[arrIdx], gridPtr_->yValues_[arrIdx]};
         }
 
-        int X() const { return x_; }
-        int Y() const { return y_; }
+        int X;
+        int Y;
 
     private:
-        int x_;
-        int y_;
         const Grid *gridPtr_;
     };
 
