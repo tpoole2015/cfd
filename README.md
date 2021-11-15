@@ -14,7 +14,7 @@ Here I and S are both specified via the command prompt. Also the top, bottom, le
 To build
 1. Check out the source code
 2. make a new directory where you want to build the code and cd into that directory 
-3. cmake <directory where code was cloned into>
+3. cmake 'directory where code was cloned into'
 4. make 
 
 The core algorithm is implemented in the code heat_equation/solver.h by the routine
